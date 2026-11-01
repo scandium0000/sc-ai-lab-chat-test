@@ -1,11 +1,11 @@
 
-name: Build Sc Chat 0.6.0 APK
+name: Build Sc Chat 0.6.1 APK
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'ScChat_0.6.0.zip'
+      - 'ScChat_0.6.1_KeyboardFix.zip'
       - '.github/workflows/build-from-zip.yml'
 
 permissions:
@@ -41,7 +41,7 @@ jobs:
       - name: Extract project ZIP
         run: |
           mkdir -p extracted
-          unzip -q ScChat_0.6.0.zip -d extracted
+          unzip -q ScChat_0.6.1_KeyboardFix.zip -d extracted
           test -f extracted/ScChat_Android/settings.gradle.kts
           test -f extracted/ScChat_Android/app/src/main/java/ai/scailab/chat/MainActivity.java
           test -f extracted/ScChat_Android/app/src/main/assets/index.html
@@ -64,13 +64,13 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" > /tmp/apk-badging.txt
           grep -q "package: name='ai.scailab.chat'" /tmp/apk-badging.txt
-          grep -q "versionName='0.6.0'" /tmp/apk-badging.txt
+          grep -q "versionName='0.6.1'" /tmp/apk-badging.txt
           cp "$APK" app-debug.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ScChat-0.6.0-debug
+          name: ScChat-0.6.1-debug
           path: app-debug.apk
           if-no-files-found: error
           retention-days: 14
