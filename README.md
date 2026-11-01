@@ -1,229 +1,187 @@
 
-# Sc Ai Lab Chat
+# Sc Chat — Android 0.6.0
 
 <p align="center">
-  <strong>A lightweight, extensible AI chat client for Android.</strong>
+  <img src="app/src/main/assets/logo.png" width="112" alt="Sc Ai Lab atom emblem">
 </p>
 
 <p align="center">
-  Version 0.4.0 · Android · Java · WebView
+  <strong>A focused, multi-provider AI workspace by Sc Ai Lab.</strong>
+</p>
+
+<p align="center">
+  Android · Local-first · Provider-independent · 0.6.0
 </p>
 
 ---
 
 ## Overview
 
-Sc Ai Lab Chat is an Android AI chat application developed by Sc Ai Lab.
+**Sc Chat** is an Android AI chat application developed by **Sc Ai Lab**. It brings conversations, projects, personal assistants, model connections, and conversation attachments into one mobile workspace.
 
-It aims to provide a clean, accessible, and extensible interface for interacting with different AI models and service providers.
+The interface uses its own Sc Ai Lab identity, blue accent system, atom emblem, page structure, and local-first workflow.
 
-The application is designed around provider independence, allowing users to configure compatible AI services instead of relying on a single model provider.
+The application is designed to remain independent of any single model provider. The current implementation supports Pollinations and user-configured OpenAI-compatible chat-completions endpoints.
 
-## Features
+## Highlights
 
-### Chat Experience
-- Real-time streaming responses.
-- Stop generation at any time.
-- Copy AI responses.
-- Edit previous user messages.
-- Regenerate AI responses.
-- Markdown rendering.
-- Code blocks and syntax highlighting.
-- Table rendering.
+### Chat Workspace
+- Streaming assistant responses.
+- Stop generation.
+- Copy messages, edit previous user prompts, and regenerate assistant responses.
+- Markdown rendering, including headings, lists, tables, links, code blocks, and code-copy actions.
+- Image and document attachments in conversations.
+- Android keyboard resizing support.
 
-### Provider Management
-- Pollinations integration.
-- Custom OpenAI-compatible API providers.
-- Configurable API Base URL.
-- Configurable model identifiers.
-- Provider switching.
-- API key encryption using Android Keystore.
+### Projects
+- Create, edit, and delete local projects.
+- Create conversations inside a project.
+- Move existing conversations into or out of projects.
+- View conversations belonging to a project.
+- Deleting a project does not delete its conversations.
 
-### Conversation Management
-- Create and manage multiple conversations.
-- Search conversation history.
-- Rename conversations.
-- Pin important conversations.
-- Delete conversations.
-- Export individual conversations as Markdown.
-- Export conversation backups as JSON.
+### Personal Assistants
+- Create, edit, select, and delete local assistants.
+- Define assistant-specific system instructions.
+- Associate conversations with an assistant.
 
-### Interface
-- Clean and minimal interface.
-- Blue accent color.
-- Automatic light and dark theme support.
-- Android system-bar compatibility.
-- Responsive mobile layout.
+### Models & Connections
+- Pollinations device authorization flow.
+- User-configurable OpenAI-compatible HTTPS providers.
+- Provider selection and model selection.
+- Per-provider Vision capability setting.
+- API credentials stored through the Android Keystore bridge with AES-GCM encryption.
+- Pollinations model discovery uses conservative pricing checks.
 
-### Local Account System
+### File Library
+- Aggregates images and documents attached to saved conversations.
+- Search attachments by filename or conversation title.
+- Navigate back to the conversation containing an attachment.
+- On-device text extraction for text-based PDFs.
+- Scanned image-only PDFs are not OCR processed.
+
+### Account & Appearance
 - Local registration and login.
-- Password hashing.
-- Local conversation storage.
+- Profile image and display-name editing.
+- Password changes after current-password verification.
+- Account deletion for the current device.
+- Automatic light/dark theme based on Android system appearance.
+- Blue Sc Ai Lab accent color and atom emblem.
 
-**Note:** Local accounts are device-specific and do not support cloud synchronization.
+## Navigation
 
-## Technology Stack
-
-| Component | Technology |
+| Section | Purpose |
 |---|---|
-| Android application | Java |
-| User interface | HTML, CSS, JavaScript |
-| Android container | WebView |
-| Android integration | AndroidX WebKit |
-| Build system | Gradle |
-| AI communication | HTTPS APIs |
-| API key protection | Android Keystore |
-| Markdown rendering | Client-side renderer |
-| CI/CD | GitHub Actions |
+| Conversations | Chat history and new conversations |
+| Projects | Group related conversations |
+| AI Assistants | Manage custom assistant instructions |
+| Models & Connections | Configure providers and models |
+| File Library | Find conversation attachments |
+| Account & Settings | Manage local profile and preferences |
 
 ## Requirements
 
 - Android 8.0 (API 26) or later.
-- Internet connection.
-- An API key for providers that require authentication.
-- Compatible AI service endpoint.
+- Internet connection for remote AI providers.
+- Valid provider credentials where required.
+- An OpenAI Chat Completions-compatible endpoint for custom providers.
 
-## Installation
+## Installation from GitHub Actions
 
-### Option 1: Download a Debug APK
+1. Upload `ScChat_0.6.0.zip` to the root of the GitHub repository.
+2. Put the provided workflow at `.github/workflows/build-from-zip.yml`.
+3. Run **Build Sc Chat 0.6.0 APK** from the Actions page.
+4. Download the `ScChat-0.6.0-debug` artifact after a successful build.
+5. Install `app-debug.apk` on your Android device.
 
-1. Open the repository's GitHub Actions page.
-2. Select a successful build.
-3. Find the Artifacts section.
-4. Download `ScAiLabChat-0.4.0-debug`.
-5. Extract the downloaded artifact if necessary.
-6. Install `app-debug.apk` on your Android device.
+The current build is a debug/test APK, not a production release.
 
-### Option 2: Build from Source
+## Build from Source
 
 Requirements:
 
-- Android SDK 35.
 - JDK 17.
+- Android SDK Platform 35.
+- Android Build Tools 35.0.0.
 - Gradle 8.9.
 
-Build command:
+From the `ScChat_Android` directory:
 
 ```bash
 gradle --no-daemon :app:assembleDebug
 ```
 
-The generated APK will be located at:
+The APK is generated at:
 
 ```text
 app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## Configure an AI Provider
+## Custom Provider Configuration
 
-Open:
+Open **Models & Connections → Add OpenAI-compatible provider** and enter:
 
-**Settings → Provider Management → Add Provider**
-
-Enter the following information:
-
-| Field | Description |
-|---|---|
-| Provider Name | A display name for the provider |
-| Base URL | HTTPS API endpoint |
-| Model ID | Model identifier |
-| API Key | Provider authentication key |
+- Provider display name.
+- HTTPS API Base URL.
+- Model ID.
+- API Key.
+- Whether the selected model supports image input.
 
 Example configuration:
 
 ```text
-Provider Name: My AI Provider
+Provider Name: My Provider
 Base URL: https://api.example.com/v1
-Model ID: your-model-name
-API Key: your-api-key
+Model ID: example-model
+API Key: your-provider-key
 ```
 
-The example endpoint is illustrative and is not a working service.
+These values are illustrative only.
 
-### API Key Security
+Provider pricing, quotas, model capabilities, and data handling are determined by the provider, not by Sc Chat.
 
-Custom provider credentials are encrypted on Android using Android Keystore-backed encryption.
+## Local Data & Privacy
 
-Users should avoid sharing API keys or including them in screenshots, logs, or exported project files.
+- User accounts, profile data, projects, assistants, conversations, and attachments are stored locally.
+- The local account system does not provide cloud access, password recovery, or cross-device synchronization.
+- Provider API credentials are handled through the native Android Keystore bridge.
+- Attachments and prompts are sent to the selected AI provider when submitted.
+- The File Library indexes attachments stored inside local conversations; it is not a separate cloud drive.
+- Avoid uploading passwords, private credentials, or unnecessary personal information.
 
-Provider pricing and usage limits are determined by the respective service providers.
+## Compatibility & Upgrade Notes
 
-## Project Structure
-
-```text
-ScAiLabChat/
-├── app/
-│   ├── src/
-│   │   └── main/
-│   │       ├── java/
-│   │       │   └── ai/scailab/chat/
-│   │       │       └── MainActivity.java
-│   │       ├── assets/
-│   │       │   ├── index.html
-│   │       │   ├── app.js
-│   │       │   ├── styles.css
-│   │       │   └── logo.png
-│   │       ├── res/
-│   │       └── AndroidManifest.xml
-│   └── build.gradle.kts
-├── gradle/
-├── settings.gradle.kts
-└── build.gradle.kts
-```
-
-## Privacy and Data Storage
-
-- Local accounts and conversations are stored on the device.
-- Custom provider API keys are encrypted using Android Keystore.
-- AI requests are sent to the provider selected by the user.
-- Each provider may process requests according to its own privacy policy.
-- Users should not submit sensitive personal information to untrusted AI services.
-
-Sc Ai Lab does not guarantee the privacy practices of third-party AI providers.
+- Android `applicationId` remains `ai.scailab.chat`.
+- Internal local-storage namespaces remain `scailab.*` to preserve compatible previous-version data.
+- Keep the development signing key stable for test updates.
+- Do not use the development signing key for a public production release.
+- If Android reports a signing-certificate conflict, back up local data before considering an uninstall.
 
 ## Roadmap
 
-### Completed in 0.4.0
-
-- [x] Streaming responses
-- [x] Stop generation
-- [x] Message actions
-- [x] Markdown rendering
-- [x] Custom provider architecture
-- [x] Conversation management
-- [x] Markdown and JSON export
-- [x] Encrypted provider credentials
-
-### Planned
-
-- [ ] File uploads
-- [ ] PDF document analysis
-- [ ] Image understanding
-- [ ] Custom AI assistants
-- [ ] Advanced context management
-- [ ] Improved local data encryption
-- [ ] HSSM model integration
-- [ ] Cloud synchronization
+- [x] Local accounts and profile settings
+- [x] Streaming chat and message actions
+- [x] Custom AI assistants
+- [x] Multi-provider connection architecture
+- [x] Projects and project-linked conversations
+- [x] Local attachment library
+- [x] Automatic system light/dark theme
+- [ ] Conversation memory and context management
+- [ ] Knowledge collections and RAG
+- [ ] Voice input and speech output
+- [ ] HSSM native provider integration
+- [ ] Encrypted local conversation database and backups
 
 ## About Sc Ai Lab
 
-Sc Ai Lab is an independent AI development project focused on model architecture, AI applications, and accessible AI technologies.
-
-Sc Ai Lab Chat is part of the broader Sc Ai Lab ecosystem.
-
-Our long-term goal is to build an extensible AI application platform that can integrate both third-party models and our own HSSM models.
+Sc Chat is part of the Sc Ai Lab ecosystem. The long-term direction is to provide one flexible client for third-party cloud models, local inference runtimes, and Sc Ai Lab's own HSSM models.
 
 ## Disclaimer
 
-This project is under active development.
+Sc Chat is under active development. This version is intended for testing. Compatibility and provider integrations may change between versions.
 
-The current version is intended for testing and development purposes. Features, compatibility, and API integrations may change between releases.
-
-Third-party AI providers are independent services. Sc Ai Lab is not responsible for their pricing, availability, or service policies.
+Verify provider pricing and privacy policies before sending data or using a paid model.
 
 ## License
 
-Licensed under the Apache License 2.0.
-
-See the [LICENSE](LICENSE) file for details.
-# sc-ai-lab-chat-test
+Licensed under the Apache License 2.0. See [LICENSE](LICENSE) for details.
