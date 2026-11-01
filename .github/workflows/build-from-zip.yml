@@ -1,11 +1,12 @@
 
-name: Build Sc Ai Lab APK
+name: Build Sc Ai Lab Chat APK
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'ScAiLabChat_Android_Phone_Download.zip'
+      - 'ScAiLabChat_ClaudeStyle_v3.zip'
+      - '.github/workflows/build-from-zip.yml'
 
 permissions:
   contents: read
@@ -29,7 +30,7 @@ jobs:
 
       - name: Check Android SDK
         run: |
-          echo "$ANDROID_HOME"
+          echo "Checking Android SDK..."
           test -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --version
 
@@ -42,8 +43,9 @@ jobs:
       - name: Extract project
         run: |
           mkdir -p extracted
-          unzip -q ScAiLabChat_Android_Phone_Download.zip -d extracted
+          unzip -q ScAiLabChat_ClaudeStyle_v3.zip -d extracted
           test -f extracted/ScAiLabChat_Prototype/settings.gradle.kts
+          echo "Project extracted successfully."
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -61,11 +63,12 @@ jobs:
           APK="extracted/ScAiLabChat_Prototype/app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
           cp "$APK" app-debug.apk
+          echo "APK generated successfully."
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: ScAiLabChat-0.2.0-debug
           path: app-debug.apk
           if-no-files-found: error
           retention-days: 14
