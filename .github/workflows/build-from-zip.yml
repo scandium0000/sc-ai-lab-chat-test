@@ -12,35 +12,35 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Set up Java
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v4
+        uses: android-actions/setup-android@v3
 
       - name: Install SDK components
         run: |
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          gradle-version: '8.9'
-          cache-provider: basic
-
       - name: Extract project
         run: |
           mkdir -p extracted
           unzip -q ScAiLabChat_Android_Phone_Download.zip -d extracted
           test -f extracted/ScAiLabChat_Prototype/settings.gradle.kts
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
 
       - name: Build APK
         run: |
@@ -55,10 +55,11 @@ jobs:
           cp "$APK" app-debug.apk
 
       - name: Upload APK
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
-          name: app-debug.apk
+          name: app-debug
           path: app-debug.apk
-          archive: false
           if-no-files-found: error
           retention-days: 14
+
+          
