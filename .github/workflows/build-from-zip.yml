@@ -1,11 +1,11 @@
 
-name: Build Sc Ai Lab Chat 0.4.0 APK
+name: Build Sc Chat 0.6.0 APK
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'ScAiLabChat_0.4.0.zip'
+      - 'ScChat_0.6.0.zip'
       - '.github/workflows/build-from-zip.yml'
 
 permissions:
@@ -14,7 +14,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
-
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
 
@@ -42,9 +41,10 @@ jobs:
       - name: Extract project ZIP
         run: |
           mkdir -p extracted
-          unzip -q ScAiLabChat_0.4.0.zip -d extracted
-          test -f extracted/ScAiLabChat_Prototype/settings.gradle.kts
-          test -f extracted/ScAiLabChat_Prototype/app/src/main/java/ai/scailab/chat/MainActivity.java
+          unzip -q ScChat_0.6.0.zip -d extracted
+          test -f extracted/ScChat_Android/settings.gradle.kts
+          test -f extracted/ScChat_Android/app/src/main/java/ai/scailab/chat/MainActivity.java
+          test -f extracted/ScChat_Android/app/src/main/assets/index.html
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
@@ -54,22 +54,23 @@ jobs:
       - name: Build APK
         run: |
           gradle --no-daemon --stacktrace \
-            -p extracted/ScAiLabChat_Prototype \
+            -p extracted/ScChat_Android \
             :app:assembleDebug
 
       - name: Verify APK and signature
         run: |
-          APK="extracted/ScAiLabChat_Prototype/app/build/outputs/apk/debug/app-debug.apk"
+          APK="extracted/ScChat_Android/app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" > /tmp/apk-badging.txt
-          head -n 3 /tmp/apk-badging.txt
+          grep -q "package: name='ai.scailab.chat'" /tmp/apk-badging.txt
+          grep -q "versionName='0.6.0'" /tmp/apk-badging.txt
           cp "$APK" app-debug.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ScAiLabChat-0.4.0-debug
+          name: ScChat-0.6.0-debug
           path: app-debug.apk
           if-no-files-found: error
           retention-days: 14
