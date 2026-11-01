@@ -1,0 +1,64 @@
+name: Build Sc Ai Lab APK from uploaded ZIP
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ScAiLabChat_Android_Phone_Download.zip'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install SDK components
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '8.9'
+          cache-provider: basic
+
+      - name: Extract project
+        run: |
+          mkdir -p extracted
+          unzip -q ScAiLabChat_Android_Phone_Download.zip -d extracted
+          test -f extracted/ScAiLabChat_Prototype/settings.gradle.kts
+
+      - name: Build APK
+        run: |
+          gradle --no-daemon --stacktrace \
+            -p extracted/ScAiLabChat_Prototype \
+            :app:assembleDebug
+
+      - name: Verify APK
+        run: |
+          APK="extracted/ScAiLabChat_Prototype/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          cp "$APK" app-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-debug.apk
+          path: app-debug.apk
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
