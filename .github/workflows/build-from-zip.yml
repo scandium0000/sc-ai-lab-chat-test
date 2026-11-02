@@ -17,51 +17,60 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. Set up Java
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
+      # 3. Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
+      # 4. Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      # Initialize Android SDK command-line tools
+      # 5. Initialize Android SDK
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+          accept-android-sdk-licenses: true
 
-      # Install SDK packages individually
+      # 6. Install required Android SDK components
       - name: Install Android SDK packages
         run: |
           set -e
 
+          echo "Checking SDK Manager..."
           sdkmanager --version
 
-          yes | sdkmanager --licenses
+          echo "Installing Android API 35..."
+          sdkmanager --install "platforms;android-35"
 
-          sdkmanager \
-            "platform-tools" \
-            "platforms;android-35" \
-            "build-tools;35.0.0"
+          echo "Installing Android Build Tools 35.0.0..."
+          sdkmanager --install "build-tools;35.0.0"
 
+          echo "Installed SDK packages:"
           sdkmanager --list_installed
 
+      # 7. Set up Gradle
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      # Extract project ZIP
+      # 8. Extract project ZIP
       - name: Extract project
         run: |
           set -e
@@ -77,14 +86,14 @@ jobs:
           unzip -q "$ZIP_FILE" -d extracted
 
           if [ ! -f "extracted/ScChat_Android/settings.gradle.kts" ]; then
-            echo "ERROR: Project directory structure is invalid."
+            echo "ERROR: Invalid project directory structure."
             find extracted -maxdepth 3 -type f | head -100
             exit 1
           fi
 
           echo "Project extraction completed."
 
-      # Run project validation and regression tests
+      # 9. Validate JavaScript and project assets
       - name: Run project tests
         working-directory: extracted/ScChat_Android
         run: |
@@ -101,9 +110,9 @@ jobs:
 
           python tests/validate-assets.py
 
-          echo "All tests passed."
+          echo "All project tests passed."
 
-      # Build Android APK
+      # 10. Build Android APK
       - name: Build Debug APK
         run: |
           set -e
@@ -113,7 +122,7 @@ jobs:
             :app:assembleDebug \
             --no-daemon
 
-      # Verify generated APK
+      # 11. Verify APK
       - name: Verify APK
         run: |
           set -e
@@ -121,14 +130,14 @@ jobs:
           APK="extracted/ScChat_Android/app/build/outputs/apk/debug/app-debug.apk"
 
           if [ ! -f "$APK" ]; then
-            echo "ERROR: APK file not found."
+            echo "ERROR: APK was not generated."
             exit 1
           fi
 
           echo "APK generated successfully."
           ls -lh "$APK"
 
-      # Upload APK
+      # 12. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
