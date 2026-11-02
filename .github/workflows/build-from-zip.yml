@@ -1,11 +1,11 @@
 
-name: Build Sc Chat 0.6.1 APK
+name: Build Sc Chat 0.7.2 APK
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'ScChat_0.6.1_KeyboardFix.zip'
+      - 'ScChat_0.7.2_LifecycleFix.zip'
       - '.github/workflows/build-from-zip.yml'
 
 permissions:
@@ -14,6 +14,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
+
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
 
@@ -41,10 +42,54 @@ jobs:
       - name: Extract project ZIP
         run: |
           mkdir -p extracted
-          unzip -q ScChat_0.6.1_KeyboardFix.zip -d extracted
+          unzip -q ScChat_0.7.2_LifecycleFix.zip -d extracted
+
           test -f extracted/ScChat_Android/settings.gradle.kts
           test -f extracted/ScChat_Android/app/src/main/java/ai/scailab/chat/MainActivity.java
           test -f extracted/ScChat_Android/app/src/main/assets/index.html
+          test -f extracted/ScChat_Android/app/src/main/assets/app.js
+
+      - name: Validate JavaScript
+        working-directory: extracted/ScChat_Android
+        run: |
+          node --check app/src/main/assets/app.js
+
+      - name: Run regression tests
+        working-directory: extracted/ScChat_Android
+        run: |
+          if [ -f tests/provider-logic.test.cjs ]; then
+            node tests/provider-logic.test.cjs
+          fi
+
+          if [ -f tests/ui-regression.test.cjs ]; then
+            node tests/ui-regression.test.cjs
+          fi
+
+          if [ -f tests/lifecycle-regression.test.cjs ]; then
+            node tests/lifecycle-regression.test.cjs
+          fi
+
+      - name: Validate Android XML
+        working-directory: extracted/ScChat_Android
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          files = [
+              Path("app/src/main/AndroidManifest.xml"),
+              Path("app/src/main/res/values/styles.xml"),
+          ]
+
+          for path in files:
+              if path.exists():
+                  ET.parse(path)
+                  print(f"XML OK: {path}")
+
+          for path in Path("app/src/main/res").glob("values*/styles.xml"):
+              ET.parse(path)
+              print(f"XML OK: {path}")
+          PY
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
@@ -60,17 +105,23 @@ jobs:
       - name: Verify APK and signature
         run: |
           APK="extracted/ScChat_Android/app/build/outputs/apk/debug/app-debug.apk"
+
           test -s "$APK"
+
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" > /tmp/apk-badging.txt
+
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" \
+            > /tmp/apk-badging.txt
+
           grep -q "package: name='ai.scailab.chat'" /tmp/apk-badging.txt
-          grep -q "versionName='0.6.1'" /tmp/apk-badging.txt
+          grep -q "versionName='0.7.2'" /tmp/apk-badging.txt
+
           cp "$APK" app-debug.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ScChat-0.6.1-debug
+          name: ScChat-0.7.2-debug
           path: app-debug.apk
           if-no-files-found: error
           retention-days: 14
