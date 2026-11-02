@@ -1,11 +1,11 @@
 
-name: Build Sc Chat 0.9.4 APK
+name: Build Sc Chat 0.9.5 APK
 
 'on':
   workflow_dispatch:
   push:
     paths:
-      - 'ScChat_0.9.4_DocumentOfficeOCR.zip'
+      - 'ScChat_0.9.5_CameraStability.zip'
       - '.github/workflows/build-from-zip.yml'
 
 permissions:
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    name: Build and verify Sc Chat 0.9.4
+    name: Build and verify Sc Chat 0.9.5
     runs-on: ubuntu-latest
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
@@ -86,7 +86,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ZIP_FILE="ScChat_0.9.4_DocumentOfficeOCR.zip"
+          ZIP_FILE="ScChat_0.9.5_CameraStability.zip"
           test -s "$ZIP_FILE"
           mkdir -p extracted
           unzip -q "$ZIP_FILE" -d extracted
@@ -163,17 +163,16 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" > /tmp/scchat-apk-badging.txt
           grep -q "package: name='ai.scailab.chat'" /tmp/scchat-apk-badging.txt
-          grep -q "versionCode='18'" /tmp/scchat-apk-badging.txt
-          grep -q "versionName='0.9.4'" /tmp/scchat-apk-badging.txt
+          grep -q "versionCode='19'" /tmp/scchat-apk-badging.txt
+          grep -q "versionName='0.9.5'" /tmp/scchat-apk-badging.txt
           mkdir -p artifacts
-          cp "$APK" artifacts/ScChat-0.9.4-debug.apk
-          ls -lh artifacts/ScChat-0.9.4-debug.apk
+          cp "$APK" artifacts/ScChat-0.9.5-debug.apk
+          ls -lh artifacts/ScChat-0.9.5-debug.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ScChat-0.9.4-debug
-          path: artifacts/ScChat-0.9.4-debug.apk
+          name: ScChat-0.9.5-debug
+          path: artifacts/ScChat-0.9.5-debug.apk
           if-no-files-found: error
           retention-days: 14
-
