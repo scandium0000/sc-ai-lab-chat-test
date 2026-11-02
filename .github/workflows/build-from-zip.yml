@@ -17,68 +17,118 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Download repository files
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. Configure Java
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
+      # 3. Configure Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
+      # 4. Configure Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
+      # 5. Configure Android SDK
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 35
+          build-tools: '35.0.0'
+          packages: |
+            platform-tools
+            platforms;android-35
+            build-tools;35.0.0
+          accept-android-sdk-licenses: true
+
+      # 6. Configure Gradle
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Install Android SDK
-        run: |
-          sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
-          yes | sdkmanager --licenses
-
+      # 7. Extract project ZIP
       - name: Extract project
         run: |
-          test -f ScChat_0.9.0_ReasoningEngine.zip
-          mkdir extracted
-          unzip -q ScChat_0.9.0_ReasoningEngine.zip -d extracted
-          test -f extracted/ScChat_Android/settings.gradle.kts
+          set -e
 
-      - name: Validate JavaScript
+          if [ ! -f "ScChat_0.9.0_ReasoningEngine.zip" ]; then
+            echo "ERROR: Project ZIP not found in repository root."
+            exit 1
+          fi
+
+          mkdir -p extracted
+
+          unzip -q ScChat_0.9.0_ReasoningEngine.zip -d extracted
+
+          if [ ! -f "extracted/ScChat_Android/settings.gradle.kts" ]; then
+            echo "ERROR: Invalid project directory structure."
+            find extracted -maxdepth 3 -type f | head -100
+            exit 1
+          fi
+
+          echo "Project extracted successfully."
+
+      # 8. Validate JavaScript and project assets
+      - name: Run project tests
         working-directory: extracted/ScChat_Android
         run: |
+          set -e
+
           node --check app/src/main/assets/app.js
+
           node tests/provider-logic.test.cjs
           node tests/ui-regression.test.cjs
           node tests/lifecycle-regression.test.cjs
           node tests/auth-resume.test.cjs
           node tests/reasoning-mode.test.cjs
           node tests/reasoning-engine.test.cjs
+
           python tests/validate-assets.py
 
-      - name: Build debug APK
-        run: |
-          gradle -p extracted/ScChat_Android :app:assembleDebug
+          echo "All project tests passed."
 
+      # 9. Build Android Debug APK
+      - name: Build Debug APK
+        run: |
+          set -e
+
+          gradle \
+            -p extracted/ScChat_Android \
+            :app:assembleDebug \
+            --no-daemon
+
+      # 10. Verify APK
       - name: Verify APK
         run: |
+          set -e
+
           APK="extracted/ScChat_Android/app/build/outputs/apk/debug/app-debug.apk"
-          test -f "$APK"
-          echo "APK generated successfully."
+
+          if [ ! -f "$APK" ]; then
+            echo "ERROR: APK was not generated."
+            exit 1
+          fi
+
+          echo "APK generated successfully:"
           ls -lh "$APK"
 
+      # 11. Upload APK artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ScChat-0.9.0-debug
           path: extracted/ScChat_Android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 14
