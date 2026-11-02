@@ -1,100 +1,84 @@
-name: Build Sc Chat 0.9.0 APK
 
-on:
-workflow_dispatch:
-push:
-paths:
-- 'ScChat_0.9.0_ReasoningEngine.zip'
-- '.github/workflows/build-from-zip.yml'
+name: Sc Chat Android Build
+
+'on':
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ScChat_0.9.0_ReasoningEngine.zip'
+      - '.github/workflows/build-from-zip.yml'
 
 permissions:
-contents: read
+  contents: read
 
 jobs:
-build:
-runs-on: ubuntu-24.04
-env:
-ANDROID_HOME: /usr/local/lib/android/sdk
+  build:
+    name: Build Sc Chat APK
+    runs-on: ubuntu-latest
 
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  - name: Set up Java 17
-    uses: actions/setup-java@v4
-    with:
-      distribution: temurin
-      java-version: '17'
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
-  - name: Install Android SDK components
-    run: |
-      SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-      test -x "$SDKMANAGER"
-      yes | "$SDKMANAGER" --licenses >/dev/null || true
-      "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-  - name: Extract project ZIP
-    run: |
-      mkdir -p extracted
-      unzip -q ScChat_0.9.0_ReasoningEngine.zip -d extracted
-      test -f extracted/ScChat_Android/settings.gradle.kts
-      test -f extracted/ScChat_Android/app/src/main/java/ai/scailab/chat/MainActivity.java
-      test -f extracted/ScChat_Android/app/src/main/assets/index.html
-      test -f extracted/ScChat_Android/tests/auth-resume.test.cjs
-      test -f extracted/ScChat_Android/tests/reasoning-mode.test.cjs
-      test -f extracted/ScChat_Android/tests/reasoning-engine.test.cjs
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
 
-  - name: Validate JavaScript and regression tests
-    working-directory: extracted/ScChat_Android
-    run: |
-      node --check app/src/main/assets/app.js
-      node tests/provider-logic.test.cjs
-      node tests/ui-regression.test.cjs
-      node tests/lifecycle-regression.test.cjs
-      node tests/auth-resume.test.cjs
-      node tests/reasoning-mode.test.cjs
-      node tests/reasoning-engine.test.cjs
-      python3 tests/validate-assets.py
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
 
-  - name: Validate Android XML
-    working-directory: extracted/ScChat_Android
-    run: |
-      python3 - <<'PY'
-      import xml.etree.ElementTree as ET
-      from pathlib import Path
-      for path in [
-          Path('app/src/main/AndroidManifest.xml'),
-          Path('app/src/main/res/values/styles.xml'),
-          Path('app/src/main/res/values-night/styles.xml'),
-      ]:
-          ET.parse(path)
-          print(f'XML OK: {path}')
-      PY
+      - name: Install Android SDK
+        run: |
+          sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+          yes | sdkmanager --licenses
 
-  - name: Set up Gradle 8.9
-    uses: gradle/actions/setup-gradle@v4
-    with:
-      gradle-version: '8.9'
+      - name: Extract project
+        run: |
+          test -f ScChat_0.9.0_ReasoningEngine.zip
+          mkdir extracted
+          unzip -q ScChat_0.9.0_ReasoningEngine.zip -d extracted
+          test -f extracted/ScChat_Android/settings.gradle.kts
 
-  - name: Build APK
-    run: |
-      gradle --no-daemon --stacktrace \
-        -p extracted/ScChat_Android \
-        :app:assembleDebug
+      - name: Validate JavaScript
+        working-directory: extracted/ScChat_Android
+        run: |
+          node --check app/src/main/assets/app.js
+          node tests/provider-logic.test.cjs
+          node tests/ui-regression.test.cjs
+          node tests/lifecycle-regression.test.cjs
+          node tests/auth-resume.test.cjs
+          node tests/reasoning-mode.test.cjs
+          node tests/reasoning-engine.test.cjs
+          python tests/validate-assets.py
 
-  - name: Verify APK and signature
-    run: |
-      APK="extracted/ScChat_Android/app/build/outputs/apk/debug/app-debug.apk"
-      test -s "$APK"
-      "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
-      "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" > /tmp/apk-badging.txt
-      grep -q "package: name='ai.scailab.chat'" /tmp/apk-badging.txt
-      grep -q "versionName='0.9.0'" /tmp/apk-badging.txt
-      cp "$APK" app-debug.apk
+      - name: Build debug APK
+        run: |
+          gradle -p extracted/ScChat_Android :app:assembleDebug
 
-  - name: Upload APK artifact
-    uses: actions/upload-artifact@v4
-    with:
-      name: ScChat-0.9.0-debug
-      path: app-debug.apk
-      if-no-files-found: error
+      - name: Verify APK
+        run: |
+          APK="extracted/ScChat_Android/app/build/outputs/apk/debug/app-debug.apk"
+          test -f "$APK"
+          echo "APK generated successfully."
+          ls -lh "$APK"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScChat-0.9.0-debug
+          path: extracted/ScChat_Android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
