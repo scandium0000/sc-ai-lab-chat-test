@@ -1,11 +1,11 @@
 
-name: Build Sc Chat 0.9.5 APK
+name: Build Sc Chat 0.9.6 APK
 
 'on':
   workflow_dispatch:
   push:
     paths:
-      - 'ScChat_0.9.5_CameraStability.zip'
+      - 'ScChat_0.9.6_CameraReturnRecovery.zip'
       - '.github/workflows/build-from-zip.yml'
 
 permissions:
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    name: Build and verify Sc Chat 0.9.5
+    name: Build and verify Sc Chat 0.9.6
     runs-on: ubuntu-latest
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
@@ -86,7 +86,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ZIP_FILE="ScChat_0.9.5_CameraStability.zip"
+          ZIP_FILE="ScChat_0.9.6_CameraReturnRecovery.zip"
           test -s "$ZIP_FILE"
           mkdir -p extracted
           unzip -q "$ZIP_FILE" -d extracted
@@ -99,6 +99,7 @@ jobs:
           test -f "$ROOT/app/src/main/assets/document-engine.js"
           test -f "$ROOT/tests/java/ai/scailab/chat/StructuredDocumentParserTest.java"
           test -f "$ROOT/tests/generated-file-links.test.cjs"
+          test -f "$ROOT/tests/camera-native-regression.test.cjs"
 
       - name: Run JavaScript regression tests
         working-directory: extracted/ScChat_Android
@@ -163,16 +164,16 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" > /tmp/scchat-apk-badging.txt
           grep -q "package: name='ai.scailab.chat'" /tmp/scchat-apk-badging.txt
-          grep -q "versionCode='19'" /tmp/scchat-apk-badging.txt
-          grep -q "versionName='0.9.5'" /tmp/scchat-apk-badging.txt
+          grep -q "versionCode='20'" /tmp/scchat-apk-badging.txt
+          grep -q "versionName='0.9.6'" /tmp/scchat-apk-badging.txt
           mkdir -p artifacts
-          cp "$APK" artifacts/ScChat-0.9.5-debug.apk
-          ls -lh artifacts/ScChat-0.9.5-debug.apk
+          cp "$APK" artifacts/ScChat-0.9.6-debug.apk
+          ls -lh artifacts/ScChat-0.9.6-debug.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ScChat-0.9.5-debug
-          path: artifacts/ScChat-0.9.5-debug.apk
+          name: ScChat-0.9.6-debug
+          path: artifacts/ScChat-0.9.6-debug.apk
           if-no-files-found: error
           retention-days: 14
