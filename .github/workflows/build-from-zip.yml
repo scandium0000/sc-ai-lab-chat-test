@@ -17,70 +17,74 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Download repository files
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Configure Java
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      # 3. Configure Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # 4. Configure Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      # 5. Configure Android SDK
+      # Initialize Android SDK command-line tools
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          api-level: 35
-          build-tools: '35.0.0'
-          packages: |
-            platform-tools
-            platforms;android-35
-            build-tools;35.0.0
-          accept-android-sdk-licenses: true
 
-      # 6. Configure Gradle
+      # Install SDK packages individually
+      - name: Install Android SDK packages
+        run: |
+          set -e
+
+          sdkmanager --version
+
+          yes | sdkmanager --licenses
+
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
+          sdkmanager --list_installed
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      # 7. Extract project ZIP
+      # Extract project ZIP
       - name: Extract project
         run: |
           set -e
 
-          if [ ! -f "ScChat_0.9.0_ReasoningEngine.zip" ]; then
-            echo "ERROR: Project ZIP not found in repository root."
+          ZIP_FILE="ScChat_0.9.0_ReasoningEngine.zip"
+
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "ERROR: Project ZIP not found."
             exit 1
           fi
 
           mkdir -p extracted
-
-          unzip -q ScChat_0.9.0_ReasoningEngine.zip -d extracted
+          unzip -q "$ZIP_FILE" -d extracted
 
           if [ ! -f "extracted/ScChat_Android/settings.gradle.kts" ]; then
-            echo "ERROR: Invalid project directory structure."
+            echo "ERROR: Project directory structure is invalid."
             find extracted -maxdepth 3 -type f | head -100
             exit 1
           fi
 
-          echo "Project extracted successfully."
+          echo "Project extraction completed."
 
-      # 8. Validate JavaScript and project assets
+      # Run project validation and regression tests
       - name: Run project tests
         working-directory: extracted/ScChat_Android
         run: |
@@ -97,9 +101,9 @@ jobs:
 
           python tests/validate-assets.py
 
-          echo "All project tests passed."
+          echo "All tests passed."
 
-      # 9. Build Android Debug APK
+      # Build Android APK
       - name: Build Debug APK
         run: |
           set -e
@@ -109,7 +113,7 @@ jobs:
             :app:assembleDebug \
             --no-daemon
 
-      # 10. Verify APK
+      # Verify generated APK
       - name: Verify APK
         run: |
           set -e
@@ -117,14 +121,14 @@ jobs:
           APK="extracted/ScChat_Android/app/build/outputs/apk/debug/app-debug.apk"
 
           if [ ! -f "$APK" ]; then
-            echo "ERROR: APK was not generated."
+            echo "ERROR: APK file not found."
             exit 1
           fi
 
-          echo "APK generated successfully:"
+          echo "APK generated successfully."
           ls -lh "$APK"
 
-      # 11. Upload APK artifact
+      # Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
